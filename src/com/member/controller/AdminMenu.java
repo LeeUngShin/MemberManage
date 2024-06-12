@@ -28,6 +28,7 @@ public class AdminMenu implements ManageMember {
 	String addrString;
 	String pwString;
 	int cnt = 0;
+	private List<Member> ms = new ArrayList<Member>();
 
 	private DbEx dbEx = new DbEx();
 
@@ -351,6 +352,7 @@ public class AdminMenu implements ManageMember {
 						+ m.getPhone() + ", 주소 : " + m.getAddr() + ", 비밀번호 : " + m.getPw() + "\n");
 			fw.close(); // 객체 닫아주기
 			System.out.println("파일 읽기 완");
+			ms = members;
 			return true;
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -360,6 +362,10 @@ public class AdminMenu implements ManageMember {
 
 	public void returnMode() {
 
+	}
+	
+	public List<Member> getList(){
+		return ms;
 	}
 
 	@Override

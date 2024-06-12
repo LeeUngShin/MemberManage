@@ -122,15 +122,18 @@ public class MemberMain {
 							boolean result = userMenu.updateMember(); // 회원 정보 수정
 							if (result)
 								System.out.println("수정 완료되었습니다.");
+							else {
+								System.out.println("수정 실패");
+							}
 							break;
 						case 3:
 							boolean result2 = userMenu.deleteMember(); // 회원 탈퇴
 							if (result2 == true) {
 								System.out.println("탈퇴 완료되었습니다.");
 								System.out.println("로그인 프로그램을 종료합니다.");
+								userLogining = false;
+								userLoginSuccess = false;
 							}
-							userLogining = false;
-							userLoginSuccess = false;
 							break;
 						case 4:
 							System.out.println("종료합니다.");
