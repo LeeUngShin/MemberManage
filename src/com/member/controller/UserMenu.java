@@ -271,10 +271,4 @@ public class UserMenu implements UserLogin {
 			e.printStackTrace();
 		}
 	}
-
-	@Override
-	public void readFileMember() {
-		// TODO Auto-generated method stub
-		
-	}
 }

@@ -360,10 +360,6 @@ public class AdminMenu implements ManageMember {
 		return false;
 	}
 
-	public void returnMode() {
-
-	}
-	
 	public List<Member> getList(){
 		return ms;
 	}
