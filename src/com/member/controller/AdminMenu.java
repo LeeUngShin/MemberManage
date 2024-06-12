@@ -1,17 +1,27 @@
 package com.member.controller;
 
+import java.awt.print.Printable;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.channels.SelectableChannel;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
+import javax.management.openmbean.OpenMBeanAttributeInfoSupport;
+import javax.xml.catalog.Catalog;
+
+import com.db.DbEx;
 import com.member.domain.Member;
 import com.member.exception.MyException;
 
 public class AdminMenu implements ManageMember {
 
 	Scanner scanner = new Scanner(System.in);
-	int num = 1;
+	static int num = 2;
 	String idString;
 	String nameString;
 	String phoneString;
@@ -19,14 +29,33 @@ public class AdminMenu implements ManageMember {
 	String pwString;
 	int cnt = 0;
 
+	private DbEx dbEx = new DbEx();
+
 	/**
 	 * 관리자 계정 생성
 	 * 
 	 * @return
 	 */
-	public List<Member> createAdmin(int num, List<Member> members) {
-		// 번호, 아이디, 이름, 전화번호, 주소, 비밀번호
-		members.add(new Member(num, "admin", "관리자", "01011112222", "관리자주소", "admin"));
+	public List<Member> createAdmin(List<Member> members) {
+		String sql = "INSERT INTO memtest(id, name, phone, addr, pass) VALUES (?, ?, ?, ?, ?)";
+		try (Connection conn = dbEx.getConnection(); PreparedStatement ps = conn.prepareStatement(sql);) {
+			// 데이터베이스 연결 생성
+
+			// PreparedStatement에 값 설정
+			ps.setString(1, "관리자");
+			ps.setString(2, "admin");
+			ps.setString(3, "01000000000");
+			ps.setString(4, "관리자주소");
+			ps.setString(5, "관리자");
+
+			// SQL 실행
+			int result = ps.executeUpdate();
+			System.out.println("삽입 성공 여부: " + result);
+			members.add(new Member(1, "admin", "관리자", "01000000000", "관리자주소", "admin"));
+		} catch (Exception e) {
+			// 예외 처리
+			e.printStackTrace();
+		}
 		return members;
 	}
 
@@ -71,25 +100,33 @@ public class AdminMenu implements ManageMember {
 	 */
 	@Override
 	public boolean createMmeber(List<Member> members) throws MyException {
-		System.out.print("등록하실 회월의 아이디를 입력하세요: ");
-		idString = scanner.nextLine();
-		System.out.print("등록하실 회월의 이름을 입력하세요: ");
-		nameString = scanner.nextLine();
-		System.out.print("등혹하실 회원의 연락처를 입력하세요: ");
-		phoneString = scanner.nextLine();
-		System.out.print("등록하실 회원의 주소를 입력하세요: ");
-		addrString = scanner.nextLine();
-		System.out.print("등록하실 회원의 비밀번호를 입력하세요: ");
-		pwString = scanner.nextLine();
-		for (Member m : members) {// 회원 db를 하나씩 가져오면서
-			if (m.getId().equals(idString)) { // 내가 입력한 id와 회원 id가 같으면
-				throw new MyException("동일한 아이디가 존재합니다."); // 예외 던지고 메서드 종료
-			}
+		String sql = "INSERT INTO memtest(id, name, phone, addr, pass) VALUES (?, ?, ?, ?, ?)";
+		try (Connection conn = dbEx.getConnection(); PreparedStatement ps = conn.prepareStatement(sql);) {
+			System.out.print("등록하실 회월의 아이디를 입력하세요: ");
+			idString = scanner.nextLine();
+			System.out.print("등록하실 회월의 이름을 입력하세요: ");
+			nameString = scanner.nextLine();
+			System.out.print("등혹하실 회원의 연락처를 입력하세요: ");
+			phoneString = scanner.nextLine();
+			System.out.print("등록하실 회원의 주소를 입력하세요: ");
+			addrString = scanner.nextLine();
+			System.out.print("등록하실 회원의 비밀번호를 입력하세요: ");
+			pwString = scanner.nextLine();
+			ps.setString(1, idString);
+			ps.setString(2, nameString);
+			ps.setString(3, phoneString);
+			ps.setString(4, addrString);
+			ps.setString(5, pwString);
+			int result = ps.executeUpdate();
+			System.out.println("회원등록 : " + result);
+			// 동일한 id가 없으면 회원 정보 등록
+			members.add(new Member(num, idString, nameString, phoneString, addrString, pwString));
+			num++; // 다음 회원의 회원 번호 1 증가 시키기 위해
+			System.out.println(members);
+			System.out.println("회원등록 후 : " + members);
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
-		// 동일한 id가 없으면 회원 정보 등록
-		members.add(new Member(num, idString, nameString, phoneString, addrString, pwString));
-		num++; // 다음 회원의 회원 번호 1 증가 시키기 위해
-		System.out.println(members);
 		return true;
 	}
 
@@ -97,18 +134,56 @@ public class AdminMenu implements ManageMember {
 	 * 회원 정보 조회
 	 */
 	@Override
-	public boolean readMmeber(int num, List<Member> members) {
-		// System.out.println(members);
+	public Member readMmeber(int num) {
+		Member member = null;
+		boolean find = false;
+		String sql = "select * from memtest where num = ?";
 
-		for (Member m : members) {
-			if (num == m.getNum()) {
-				System.out.println("일치하는 회원번호가 있습니다.");
-				System.out.println(m);
-				return true;
+		try (Connection conn = dbEx.getConnection(); PreparedStatement ps = conn.prepareStatement(sql);) {
+			ps.setLong(1, num);
+			// 쿼리 실행
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					int num1 = rs.getInt("num");
+					String id = rs.getString("id");
+					String name = rs.getString("name");
+					String phone = rs.getString("phone");
+					String addr = rs.getString("addr");
+					String pw = rs.getString("pass");
+//	                System.out.println("num : "+num+" ,id"+id);
+					member = new Member(num1, id, name, phone, addr, pw);
+					System.out.println(member.toString());
+					find = true;
+				}
+				if (!find) {
+					while (!find) {
+						System.out.println("해당 회원번호는 없습니다.");
+						System.out.println("회원번호를 다시 입력하세요");
+						int n = scanner.nextInt();
+						ps.setLong(1, n);
+						try (ResultSet rs2 = ps.executeQuery();) {
+							while (rs2.next()) {
+								int num1 = rs2.getInt("num");
+								String id = rs2.getString("id");
+								String name = rs2.getString("name");
+								String phone = rs2.getString("phone");
+								String addr = rs2.getString("addr");
+								String pw = rs2.getString("pass");
+								member = new Member(num1, id, name, phone, addr, pw);
+								System.out.println(member.toString());
+								find = true;
+							}
+						}
+					}
+				}
 			}
+		} catch (
+
+		SQLException e) {
+			e.printStackTrace();
+			System.out.println("2번 예외발생");
 		}
-		System.out.println("해당하는 회원번호의 회원이 없습니다.");
-		return false;
+		return member;
 	}
 
 	/**
@@ -118,39 +193,62 @@ public class AdminMenu implements ManageMember {
 	public boolean updateMmeber(List<Member> members) {
 		System.out.println("수정할 회원 아이디를 입력해주세요.");
 		idString = scanner.nextLine();
-		for (Member m : members) { // 회원 db 처음부터 돌면서
-			if (m.getId().equals(idString)) { // 내가 입력한 id와 회원 id가 같은 경우를 만나면 그 회원의 정보 수정
-				System.out.println(m.getId() + " 회원의 이름을 수정하세요:");
-				nameString = scanner.nextLine();
-				System.out.println(m.getId() + " 회원의 연락처를 수정하세요:");
-				phoneString = scanner.nextLine();
-				System.out.println(m.getId() + " 회원의 주소를 수정하세요:");
-				addrString = scanner.nextLine();
-				System.out.println(m.getId() + " 회원의 비밀번호를 입력하세요");
-				pwString = scanner.nextLine();
-				if (!(m.getPw().equals(pwString))) { // 입력한 pw와 해당 회원의 pw가 같지 않으면
-					System.out.println("비밀번호 불일치로 회원정보 수정 실패");
-					return false; // 정보 수정 실패
+		String sql1 = "update memtest set name = ?, phone=?, addr=? where id = ?";
+		String sql2 = "select * from memtest where id=?";
+		try (Connection conn = dbEx.getConnection();
+				PreparedStatement ps1 = conn.prepareStatement(sql1);
+				PreparedStatement ps2 = conn.prepareStatement(sql2);) {
+			ps2.setString(1, idString);
+			try (ResultSet rs2 = ps2.executeQuery()) {
+				if(rs2.next()) {
+					int num1 = rs2.getInt("num");
+					String id = rs2.getString("id");
+					String name = rs2.getString("name");
+					String phone = rs2.getString("phone");
+					String addr = rs2.getString("addr");
+					String pw = rs2.getString("pass");
+					Member member = new Member(num1, id, name, phone, addr, pw);
+					System.out.println("회원 현재 정보 : " + member.toString());
+					System.out.print("수정할 이름 : ");
+					nameString = scanner.nextLine();
+					System.out.print("수정할 전화번호 : ");
+					phoneString = scanner.nextLine();
+					System.out.print("수정할 주소 : ");
+					addrString = scanner.nextLine();
+					System.out.println("비밀번호 입력 : ");
+					pwString = scanner.nextLine();
+					if (!pw.equals(pwString)) {
+						System.out.println("비밀번호가 맞지 않습니다.");
+						return false;
+					} else {
+						ps1.setString(1, nameString);
+						ps1.setString(2, phoneString);
+						ps1.setString(3, addrString);
+						ps1.setString(4, idString);
+						int result = ps1.executeUpdate();
+
+					}
 				}
-				// 비밀번호가 같으면
-				if (nameString.equals("")) // 아무 입력 안하면
-					m.setName(m.getName()); // 원래 이름 저장
-				else // 입력하면
-					m.setName(nameString); // 입력한 이름 저장
-				if (phoneString.equals("")) // 아무 입력 안하면
-					m.setPhone(m.getPhone()); // 원래 번호 저장
-				else // 입력하면
-					m.setPhone(phoneString); // 입력한 번호 저장
-				if (addrString.equals("")) // 아무 입력 안하면
-					m.setAddr(m.getAddr()); // 원래 주소 저장
-				else // 입력하면
-					m.setAddr(addrString); // 입력한 주소 저장
-				return true; // 수정 성공 시 true 반환
+				else {
+					System.out.println("해당하는 아이디가 없습니다.");
+					return false;
 			}
 		}
-		// 입력한 id와 동일한 회원이 없으면
-		System.out.println("일치하는 아이디가 없습니다.");
-		return false;
+		for (Member m : members) {
+			if (m.getId().equals(idString)) {
+				m.setName(nameString);
+				m.setPhone(phoneString);
+				m.setAddr(addrString);
+			}
+		}
+		System.out.println("정보수정후 : " + members);
+	}catch(
+
+	SQLException e)
+	{
+				e.printStackTrace();
+			}return true;
+
 	}
 
 	/**
@@ -158,30 +256,78 @@ public class AdminMenu implements ManageMember {
 	 */
 	@Override
 	public boolean deleteMmeber(List<Member> members) {
+		System.out.println("삭제전 : "+members);
 		System.out.println("삭제할 회원의 아이디를 입력하세요:");
 		idString = scanner.nextLine();
 		System.out.println("비밀번호를 입력하세요:");
 		pwString = scanner.nextLine();
-		for (Member m : members) { // 회원 db 하나씩 돌면서
-			// 내가 입력한 id와 회원 id가 같고 내가 입력한 pw와 회원 pw가 같은 경우가 있으면
-			if ((m.getId().equals(idString)) && m.getPw().equals(pwString)) {
-				members.remove(m); // 해당 회원을 db에서 삭제
-				return true; // true 반환
+		String sql1 = "select * from memtest where id=?";
+		String sql2 = "delete from memtest where id=?";
+		try(Connection conn = dbEx.getConnection();
+				PreparedStatement ps1 = conn.prepareStatement(sql1);
+				PreparedStatement ps2 = conn.prepareStatement(sql2);){
+			ps1.setString(1, idString);
+			try(ResultSet rs = ps1.executeQuery()){
+				if(rs.next()) {
+					String id=rs.getString("id");
+					String pw=rs.getString("pass");
+					if(idString.equals(id) && pwString.equals(pw)) {
+						ps2.setString(1, idString);
+						ps2.executeUpdate();
+						System.out.println("성공!");
+					}
+					else {
+						System.out.println("아이디나 비밀번호가 틀립니다.");
+						return false;
+					}
+				}
+				else {
+					System.out.println("해당하는 아이디가 없습니다");
+					return false;
+				}
 			}
+			Iterator<Member> iter = members.iterator();
+			while(iter.hasNext()) {
+				Member member = iter.next();
+				if(member.getId().equals(idString) && member.getPw().equals(pwString)) {
+					iter.remove();
+				}
+			}
+			
+			System.out.println("삭제 후 : "+members);
+		}catch (SQLException e) {
+			e.printStackTrace();
 		}
-		// 내가 입력한 id와 회원 id가 같고 내가 입력한 pw와 회원 pw가 같은 경우가 없으면
-		System.out.println("일치하는 아이디와 비밀번호가 없습니다.");
-		return false;
+		return true;
 	}
-	
+
 	/**
 	 * 회원 리스트 출력
 	 */
 	@Override
 	public void listMember(List<Member> members) {
+		
+		String sql = "select * from memtest";
+		try(Connection conn = dbEx.getConnection();
+				PreparedStatement ps = conn.prepareStatement(sql);
+				ResultSet rs = ps.executeQuery();){
+			while(rs.next()) {
+				int num = rs.getInt("num");
+				String id = rs.getString("id");
+				String name = rs.getString("name");
+				String phone = rs.getString("phone");
+				String addr = rs.getString("addr");
+				String pw = rs.getString("pass");
+				Member member = new Member(num,id,name,phone,addr,pw);
+				System.out.println((num+1)+"번쨰 회원 : " + member);
+			}
+
 		for (Member m : members) { // 회원 db 하나씩 돌면서
 			// 회원 정보 출력
 			System.out.println("회원번호 " + m.getNum() + "  이름 " + m.getName() + "  연락처 " + m.getPhone());
+		}
+		}catch (SQLException e) {
+			// TODO: handle exception
 		}
 	}
 
@@ -201,7 +347,7 @@ public class AdminMenu implements ManageMember {
 			FileWriter fw = new FileWriter(file); // 파일 쓰기 위한 객체
 			for (Member m : members) // 멤버 하나씩 돌면서
 				// 해당 회원의 정보를 씀(파일로 내보냄)
-				fw.write("회원번호 : " + m.getNum()+", 아이디 : " + m.getId()+", 이름 : " + m.getName() + ", 연락처 : "
+				fw.write("회원번호 : " + m.getNum() + ", 아이디 : " + m.getId() + ", 이름 : " + m.getName() + ", 연락처 : "
 						+ m.getPhone() + ", 주소 : " + m.getAddr() + ", 비밀번호 : " + m.getPw() + "\n");
 			fw.close(); // 객체 닫아주기
 			System.out.println("파일 읽기 완");
@@ -211,9 +357,9 @@ public class AdminMenu implements ManageMember {
 		}
 		return false;
 	}
-	
+
 	public void returnMode() {
-		
+
 	}
 
 	@Override
@@ -221,5 +367,4 @@ public class AdminMenu implements ManageMember {
 		// TODO Auto-generated method stub
 		return false;
 	}
-
 }

@@ -1,9 +1,10 @@
 package com.member.main;
 
-import java.awt.desktop.PrintFilesEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+
+import com.db.DbEx;
 import com.member.controller.AdminMenu;
 import com.member.controller.UserMenu;
 import com.member.domain.Member;
@@ -15,13 +16,16 @@ public class MemberMain {
 	public static void main(String[] args) {
 
 		List<Member> members = new ArrayList<>();
+		DbEx dbEx = new DbEx();
+		dbEx.initTable();
 
 		Scanner scanner = new Scanner(System.in);
 
 		AdminMenu adminMenu = new AdminMenu(); // 관리자 기능 모아져 있는 클래스
 		UserMenu userMenu = new UserMenu(members); // 회원 기능 모아져 있는 클래스
+		adminMenu.createAdmin(members);
 
-		System.out.println("관지자 정보 : " + adminMenu.createAdmin(0, members)); // 관리자 계정 생성
+		System.out.println("관지자 정보 : " + members); // 관리자 계정 생성
 
 		boolean adminLoginSuccess = false;
 		boolean userLoginSuccess = false;
@@ -66,7 +70,7 @@ public class MemberMain {
 						case 2:
 							System.out.print("조회할 회원번호 : ");
 							int userNum = scanner.nextInt();
-							boolean result2 = adminMenu.readMmeber(userNum, members); // 회원 정보 조회(아이디로)
+							adminMenu.readMmeber(userNum); // 회원 정보 조회(아이디로)
 							break;
 						case 3:
 							boolean result3 = adminMenu.updateMmeber(members); // 회원 정보 수정
@@ -95,6 +99,8 @@ public class MemberMain {
 					}catch (Exception e) {
 						System.out.println("1~7사이의 숫자를 입력하세요");
 						scanner.nextLine();
+						System.out.println(e.getMessage());
+						e.printStackTrace();
 						continue;
 					}
 				}
