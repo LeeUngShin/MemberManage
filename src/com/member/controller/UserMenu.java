@@ -30,11 +30,8 @@ public class UserMenu implements UserLogin {
 	List<Member> members = new ArrayList<>(); // 회원 db 저장
 	Member member;// 로그인한 회원의 정보 저장
 	String[] arr = new String[20]; // 파일 읽어와서 그 파일의 텍스트를 split()으로 쪼개서 배열에 저장
-	DbEx dbEx = new DbEx();
-
-	public UserMenu() {
-		// TODO Auto-generated constructor stub
-	}
+	
+	private Connection conn = DbEx.getConn();
 
 	public UserMenu(List<Member> members) {
 		this.members = members;
@@ -57,7 +54,7 @@ public class UserMenu implements UserLogin {
 			System.out.println("비밀번호를 입력하세요.");
 			pw = scanner.nextLine();
 			String sql = "select * from memtest where id= ? and pass=?";
-			try (Connection conn = dbEx.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			try (PreparedStatement ps = conn.prepareStatement(sql)) {
 
 				ps.setString(1, id);
 				ps.setString(2, pw);
@@ -106,7 +103,7 @@ public class UserMenu implements UserLogin {
 	public void readMember() {
 		System.out.println("조회시 나와야한 정보 : " + member);
 		String sql = "select * from memtest where id = ?";
-		try (Connection conn = dbEx.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
 			ps.setString(1, member.getId());
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
@@ -133,8 +130,7 @@ public class UserMenu implements UserLogin {
 		
 		String sql = "UPDATE memtest SET name=?, phone=?, addr=? WHERE id=?";
 
-		try(Connection conn = dbEx.getConnection();
-				PreparedStatement ps = conn.prepareStatement(sql)){
+		try(PreparedStatement ps = conn.prepareStatement(sql)){
 			System.out.print("수정할 이름 : ");
 			String name=scanner.nextLine();
 			System.out.print("수정할 전화번호 : ");
@@ -181,7 +177,7 @@ public class UserMenu implements UserLogin {
 			return false;
 		}
 		String sql = "delete from memtest where id=?";
-		try (Connection conn = dbEx.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
 			ps.setString(1, member.getName());
 			int r = ps.executeUpdate();
 			System.out.println("delete 반환값 : "+r);

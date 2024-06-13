@@ -29,8 +29,11 @@ public class AdminMenu implements ManageMember {
 	String pwString;
 	int cnt = 0;
 	private List<Member> ms = new ArrayList<Member>();
-
-	private DbEx dbEx = new DbEx();
+	Connection conn = null;
+	
+	public AdminMenu() {
+		conn = DbEx.getConn();
+	}
 
 	/**
 	 * 관리자 계정 생성
@@ -39,7 +42,7 @@ public class AdminMenu implements ManageMember {
 	 */
 	public List<Member> createAdmin(List<Member> members) {
 		String sql = "INSERT INTO memtest(id, name, phone, addr, pass) VALUES (?, ?, ?, ?, ?)";
-		try (Connection conn = dbEx.getConnection(); PreparedStatement ps = conn.prepareStatement(sql);) {
+		try (PreparedStatement ps = conn.prepareStatement(sql);) {
 			// 데이터베이스 연결 생성
 
 			// PreparedStatement에 값 설정
@@ -102,7 +105,7 @@ public class AdminMenu implements ManageMember {
 	@Override
 	public boolean createMmeber(List<Member> members) throws MyException {
 		String sql = "INSERT INTO memtest(id, name, phone, addr, pass) VALUES (?, ?, ?, ?, ?)";
-		try (Connection conn = dbEx.getConnection(); PreparedStatement ps = conn.prepareStatement(sql);) {
+		try (PreparedStatement ps = conn.prepareStatement(sql);) {
 			System.out.print("등록하실 회월의 아이디를 입력하세요: ");
 			idString = scanner.nextLine();
 			System.out.print("등록하실 회월의 이름을 입력하세요: ");
@@ -140,7 +143,7 @@ public class AdminMenu implements ManageMember {
 		boolean find = false;
 		String sql = "select * from memtest where num = ?";
 
-		try (Connection conn = dbEx.getConnection(); PreparedStatement ps = conn.prepareStatement(sql);) {
+		try (PreparedStatement ps = conn.prepareStatement(sql);) {
 			ps.setLong(1, num);
 			// 쿼리 실행
 			try (ResultSet rs = ps.executeQuery()) {
@@ -196,8 +199,7 @@ public class AdminMenu implements ManageMember {
 		idString = scanner.nextLine();
 		String sql1 = "update memtest set name = ?, phone=?, addr=? where id = ?";
 		String sql2 = "select * from memtest where id=?";
-		try (Connection conn = dbEx.getConnection();
-				PreparedStatement ps1 = conn.prepareStatement(sql1);
+		try (PreparedStatement ps1 = conn.prepareStatement(sql1);
 				PreparedStatement ps2 = conn.prepareStatement(sql2);) {
 			ps2.setString(1, idString);
 			try (ResultSet rs2 = ps2.executeQuery()) {
@@ -264,8 +266,7 @@ public class AdminMenu implements ManageMember {
 		pwString = scanner.nextLine();
 		String sql1 = "select * from memtest where id=?";
 		String sql2 = "delete from memtest where id=?";
-		try(Connection conn = dbEx.getConnection();
-				PreparedStatement ps1 = conn.prepareStatement(sql1);
+		try(PreparedStatement ps1 = conn.prepareStatement(sql1);
 				PreparedStatement ps2 = conn.prepareStatement(sql2);){
 			ps1.setString(1, idString);
 			try(ResultSet rs = ps1.executeQuery()){
@@ -309,8 +310,7 @@ public class AdminMenu implements ManageMember {
 	public void listMember(List<Member> members) {
 		
 		String sql = "select * from memtest";
-		try(Connection conn = dbEx.getConnection();
-				PreparedStatement ps = conn.prepareStatement(sql);
+		try(PreparedStatement ps = conn.prepareStatement(sql);
 				ResultSet rs = ps.executeQuery();){
 			while(rs.next()) {
 				int num = rs.getInt("num");

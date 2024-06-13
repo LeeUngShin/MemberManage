@@ -16,16 +16,14 @@ public class MemberMain {
 	public static void main(String[] args) {
 
 		List<Member> members = new ArrayList<>();
-		DbEx dbEx = new DbEx();
-		dbEx.initTable();
+		// DbEx dbEx = new DbEx();
+		DbEx.initializeConnection();  // db 연결
+		members.add(new Member(1, "admin", "관리자", "01000000000", "관리자주소", "admin"));
 
 		Scanner scanner = new Scanner(System.in);
 
 		AdminMenu adminMenu = new AdminMenu(); // 관리자 기능 모아져 있는 클래스
 		UserMenu userMenu = new UserMenu(members); // 회원 기능 모아져 있는 클래스
-		adminMenu.createAdmin(members);
-
-		System.out.println("관지자 정보 : " + members); // 관리자 계정 생성
 
 		boolean adminLoginSuccess = false;
 		boolean userLoginSuccess = false;
@@ -151,5 +149,7 @@ public class MemberMain {
 			}
 			if(userLoginSuccess==false&&userLogining==false) continue;
 		}
+		
+		DbEx.closeConn();  // db 연결 종료
 	}
 }
