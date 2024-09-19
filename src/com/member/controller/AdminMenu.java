@@ -17,6 +17,7 @@ import javax.xml.catalog.Catalog;
 import com.db.DbEx;
 import com.member.domain.Member;
 import com.member.exception.MyException;
+import com.mysql.cj.protocol.x.ReusableOutputStream;
 
 public class AdminMenu implements ManageMember {
 
@@ -28,10 +29,10 @@ public class AdminMenu implements ManageMember {
 	String addrString;
 	String pwString;
 	int cnt = 0;
-	private List<Member> ms = new ArrayList<Member>();
-	Connection conn = null;
+	//private List<Member> ms = new ArrayList<Member>();
+	Connection conn = null;  //db 연결 객체
 	
-	public AdminMenu() {
+	public AdminMenu() {  // db 연결 객체 생성
 		conn = DbEx.getConn();
 	}
 
@@ -46,11 +47,11 @@ public class AdminMenu implements ManageMember {
 			// 데이터베이스 연결 생성
 
 			// PreparedStatement에 값 설정
-			ps.setString(1, "관리자");
-			ps.setString(2, "admin");
+			ps.setString(1, "admin");
+			ps.setString(2, "관리자");
 			ps.setString(3, "01000000000");
 			ps.setString(4, "관리자주소");
-			ps.setString(5, "관리자");
+			ps.setString(5, "admin");
 
 			// SQL 실행
 			int result = ps.executeUpdate();
@@ -62,6 +63,19 @@ public class AdminMenu implements ManageMember {
 		}
 		return members;
 	}
+	
+	public void adminMenu() {
+		System.out.println("*******************************************");
+		System.out.println("\t\t회원 관리 프로그램");
+		System.out.println("*******************************************");
+		System.out.println("1. 고객 정보 등록하기\t2. 고객 정보 조회하기");
+		System.out.println("3. 고객 정보 수정하기\t4. 고객 정보 삭제하기");
+		System.out.println("5. 고객 정보 목록보기\t6. 고객 정보 파일출력");
+		System.out.println("7. 상품 등록\t8. 전체주문내역 출력");
+		System.out.println("9. 등록 상품 보기\t10. 종료");
+		System.out.println("*******************************************");
+		System.out.print("메뉴 번호를 선택해주세요");
+	}
 
 	/**
 	 * 로그인 화면 및 기능
@@ -69,34 +83,41 @@ public class AdminMenu implements ManageMember {
 	 * @return
 	 */
 	public boolean adminLogin(List<Member> members) {
-		while (cnt < 3) { // 3번 초과 시 프로그램 종료
-			System.out.println("*******************************************");
-			System.out.println("\t\t로그인");
-			System.out.println("*******************************************");
+		int cnt=0;
+		System.out.println("*******************************************");
+		System.out.println("\t\t로그인");
+		System.out.println("*******************************************");
+		while(cnt<3) {
 			System.out.print("아이디를 입력하세요:");
 			String id = scanner.nextLine();
-			if (!(members.get(0).getId().equals(id))) { // 내가 입력한 id와 관리자 id 같지 않으면
-				System.out.println("일치하는 아이디가 없습니다.");
-				cnt++; // 실패 횟수 증가
-				continue; // 다시 로그인 화면으로 이동
-			}
+			
 			System.out.print("비밀번호를 입력하세요:");
 			String pw = scanner.nextLine();
-			if (!(members.get(0).getId().equals(pw))) { // 내가 입력한 pw와 관리자 pw 같지 않으면
-				System.out.println("비밀번호가 틀렸습니다.");
-				cnt++; // 실패 횟수 증가
-				continue; // 다시 로그인 화면으로 이동
-			}
-			// 내가 입력한 id와 관리자 id가 같고 내가 입력한 pw와 pw가 같으면
-			if ((members.get(0).getId().equals(id)) && (members.get(0).getPw().equals(pw))) {
-				System.out.println("로그인 성공");
-				return true; // true 반환
-				// break;
+			String sql = "select * from memtest where MNum=1";
+			
+			try(PreparedStatement ps = conn.prepareStatement(sql);
+				ResultSet rs = ps.executeQuery()){
+				String adminIdString="";
+				String adminPwString="";
+				while(rs.next()) {
+					adminIdString = rs.getString("id");
+					adminPwString = rs.getString("pass");
+				}
+				if(id.equals(adminIdString) && pw.equals(adminPwString)) {
+					System.out.println("로그인 실패");
+					return true;
+				}
+				else {
+					cnt++;
+					continue;
+				}
+				
+			}catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
-		// ctn가 3이 되면 while()문 나와서
-		System.out.println("로그인 횟수 초과");
-		return false; // false 반환
+		System.out.println("로그인 횟수 초과");	
+		return false;
 	}
 
 	/**
@@ -126,9 +147,31 @@ public class AdminMenu implements ManageMember {
 			// 동일한 id가 없으면 회원 정보 등록
 			members.add(new Member(num, idString, nameString, phoneString, addrString, pwString));
 			num++; // 다음 회원의 회원 번호 1 증가 시키기 위해
-			System.out.println(members);
-			System.out.println("회원등록 후 : " + members);
+			//System.out.println(members);
+			//System.out.println("회원등록 후 : " + members);
 		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return true;
+	}
+	
+	public boolean registerItem() {
+		
+		String sqlString = "INSERT INTO items(name, stock, price) values(?,?,?)";
+		try(PreparedStatement ps = conn.prepareStatement(sqlString)){
+			System.out.println("상품명 : ");
+			String name = scanner.nextLine();
+			System.out.println("수량 : ");
+			int stock=scanner.nextInt();
+			System.out.println("가격 : ");
+			int price = scanner.nextInt();
+		
+			ps.setString(1, name);
+			ps.setInt(2, stock);
+			ps.setInt(3, price);
+			int result = ps.executeUpdate();
+			System.out.println("상품등록 : " + result);
+		}catch (SQLException e) {
 			e.printStackTrace();
 		}
 		return true;
@@ -141,14 +184,14 @@ public class AdminMenu implements ManageMember {
 	public Member readMmeber(int num) {
 		Member member = null;
 		boolean find = false;
-		String sql = "select * from memtest where num = ?";
+		String sql = "select * from memtest where Mnum = ?";
 
 		try (PreparedStatement ps = conn.prepareStatement(sql);) {
 			ps.setLong(1, num);
 			// 쿼리 실행
 			try (ResultSet rs = ps.executeQuery()) {
-				while (rs.next()) {
-					int num1 = rs.getInt("num");
+				if (rs.next()) {
+					int num1 = rs.getInt("Mnum");
 					String id = rs.getString("id");
 					String name = rs.getString("name");
 					String phone = rs.getString("phone");
@@ -167,7 +210,7 @@ public class AdminMenu implements ManageMember {
 						ps.setLong(1, n);
 						try (ResultSet rs2 = ps.executeQuery();) {
 							while (rs2.next()) {
-								int num1 = rs2.getInt("num");
+								int num1 = rs2.getInt("Mnum");
 								String id = rs2.getString("id");
 								String name = rs2.getString("name");
 								String phone = rs2.getString("phone");
@@ -204,7 +247,7 @@ public class AdminMenu implements ManageMember {
 			ps2.setString(1, idString);
 			try (ResultSet rs2 = ps2.executeQuery()) {
 				if(rs2.next()) {
-					int num1 = rs2.getInt("num");
+					int num1 = rs2.getInt("Mnum");
 					String id = rs2.getString("id");
 					String name = rs2.getString("name");
 					String phone = rs2.getString("phone");
@@ -244,7 +287,6 @@ public class AdminMenu implements ManageMember {
 				m.setAddr(addrString);
 			}
 		}
-		System.out.println("정보수정후 : " + members);
 	}catch(
 
 	SQLException e)
@@ -259,7 +301,6 @@ public class AdminMenu implements ManageMember {
 	 */
 	@Override
 	public boolean deleteMmeber(List<Member> members) {
-		System.out.println("삭제전 : "+members);
 		System.out.println("삭제할 회원의 아이디를 입력하세요:");
 		idString = scanner.nextLine();
 		System.out.println("비밀번호를 입력하세요:");
@@ -296,7 +337,6 @@ public class AdminMenu implements ManageMember {
 				}
 			}
 			
-			System.out.println("삭제 후 : "+members);
 		}catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -313,14 +353,14 @@ public class AdminMenu implements ManageMember {
 		try(PreparedStatement ps = conn.prepareStatement(sql);
 				ResultSet rs = ps.executeQuery();){
 			while(rs.next()) {
-				int num = rs.getInt("num");
+				int num = rs.getInt("Mnum");
 				String id = rs.getString("id");
 				String name = rs.getString("name");
 				String phone = rs.getString("phone");
 				String addr = rs.getString("addr");
 				String pw = rs.getString("pass");
 				Member member = new Member(num,id,name,phone,addr,pw);
-				System.out.println((num+1)+"번쨰 회원 : " + member);
+				System.out.println(member);
 			}
 
 		for (Member m : members) { // 회원 db 하나씩 돌면서
@@ -329,6 +369,36 @@ public class AdminMenu implements ManageMember {
 		}
 		}catch (SQLException e) {
 			// TODO: handle exception
+		}
+	}
+	
+	@Override
+	public void showOrders() {
+		String sql = "select memtest.MNum, memtest.id, memtest.name as mem_name, memtest.addr, " +
+	             "items.name as item_name, orders.ONum, orders.stock, orders.totalprice " +
+	             "from orders " +
+	             "inner join memtest on orders.FMNum = memtest.MNum " +
+	             "inner join items on orders.FINum = items.INum";
+		try(PreparedStatement ps = conn.prepareStatement(sql)){
+			System.out.printf("%-10s%-8s%-8s%-8s%-8s%-8s%-8s%-8s%n",
+	                "주문번호", "상품명", "주문수량", "주문가격", "유저번호", "유저아이디", "유저이름", "유저주소");
+			try(ResultSet rs = ps.executeQuery()){
+				while(rs.next()) {
+					int mNum = rs.getInt("MNum");
+					String id = rs.getString("id");
+					String mem_name = rs.getString("mem_name");
+					String addr = rs.getString("addr");
+					String item_name = rs.getString("item_name");
+					int oNum = rs.getInt("ONum");
+					int stock = rs.getInt("stock");
+					int totalprice = rs.getInt("totalprice");
+					System.out.printf("%-10d%-10s%-10d%-10d%-10d%-10s%-10s%-10s%n",
+			                oNum, item_name, stock, totalprice, mNum, id, mem_name, addr);
+				}
+			}
+			
+		}catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -352,7 +422,7 @@ public class AdminMenu implements ManageMember {
 						+ m.getPhone() + ", 주소 : " + m.getAddr() + ", 비밀번호 : " + m.getPw() + "\n");
 			fw.close(); // 객체 닫아주기
 			System.out.println("파일 읽기 완");
-			ms = members;
+			//ms = members;
 			return true;
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -360,13 +430,26 @@ public class AdminMenu implements ManageMember {
 		return false;
 	}
 
-	public List<Member> getList(){
-		return ms;
+	@Override
+	public void showItems() {
+		
+		String sql = "select * from items";
+		System.out.printf("%-7s%-7s%-7s%-7s%n", "상품번호", "상품이름", "상품수량", "상품가격");
+		try(PreparedStatement ps = conn.prepareStatement(sql);
+				ResultSet rs= ps.executeQuery()){
+			while(rs.next()) {
+				int iNum = rs.getInt("INum");
+				String name = rs.getString("name");
+				int stock = rs.getInt("stock");
+				int price = rs.getInt("price");
+				System.out.printf("%-9d%-7s%-9d%-7d%n", iNum, name, stock, price);
+			}
+			
+			
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 	}
 
-	@Override
-	public boolean readMmeber() {
-		// TODO Auto-generated method stub
-		return false;
-	}
 }

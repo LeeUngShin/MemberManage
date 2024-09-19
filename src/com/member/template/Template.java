@@ -31,17 +31,6 @@ public class Template {
 		}
 		return mode;
 	}
-	
-	public void adminMenu() {
-		System.out.println("*******************************************");
-		System.out.println("\t\t회원 관리 프로그램");
-		System.out.println("*******************************************");
-		System.out.println("1. 고객 정보 등록하기\t2. 고객 정보 조회하기");
-		System.out.println("3. 고객 정보 수정하기\t4. 고객 정보 삭제하기");
-		System.out.println("5. 고객 정보 목록보기\t6. 고객 정보 파일출력");
-		System.out.println("7. 종료");
-		System.out.println("*******************************************");
-		System.out.print("메뉴 번호를 선택해주세요");
-	}
+
 
 }

@@ -18,17 +18,19 @@ public class MemberMain {
 		List<Member> members = new ArrayList<>();
 		// DbEx dbEx = new DbEx();
 		DbEx.initializeConnection();  // db 연결
-		members.add(new Member(1, "admin", "관리자", "01000000000", "관리자주소", "admin"));
+		//members.add(new Member(1, "admin", "관리자", "01000000000", "관리자주소", "admin"));
 
 		Scanner scanner = new Scanner(System.in);
 
 		AdminMenu adminMenu = new AdminMenu(); // 관리자 기능 모아져 있는 클래스
-		UserMenu userMenu = new UserMenu(members); // 회원 기능 모아져 있는 클래스
+		UserMenu userMenu = new UserMenu(); // 회원 기능 모아져 있는 클래스
 
 		boolean adminLoginSuccess = false;
 		boolean userLoginSuccess = false;
-
+		boolean adminLogining = false;
+		boolean userLogining = false;
 		Template template = new Template();
+		
 
 		while (true) {
 			int mode = template.selectMode(); // 1->관리자, 2->회원, 3->기회초과
@@ -36,22 +38,22 @@ public class MemberMain {
 			if (mode == 1) { // 관리자모드
 				adminLoginSuccess = adminMenu.adminLogin(members); // 로그인 화면 - 성공 시 true 반환
 				System.out.println("관리자 로그인 성공여부 : " + adminLoginSuccess);
+				adminLogining = true;
 			} else if (mode == 2) { //
 				userLoginSuccess = userMenu.login();
 				System.out.println("일반 회원 로그인 성공여부 : " + userLoginSuccess);
+				userLogining = true;
 			} else if (mode == 3) {
 				System.out.println("프로그램을 종료합니다.");
 				break;
 			}
 			else {
-				System.out.println("입력 횟수 초과로 프로그램을 종료합니다.");
 				break;
 			}
 
-			boolean adminLogining = true;
 			if (adminLoginSuccess) { // 로그인 성공 시 메뉴화면 출력
 				while (adminLogining) {
-					template.adminMenu(); // 메뉴화면 출력 메서드
+					adminMenu.adminMenu(); // 메뉴화면 출력 메서드
 					try {
 					int num = scanner.nextInt(); // 메뉴번호 입력
 					switch (num) {
@@ -86,7 +88,17 @@ public class MemberMain {
 						case 6:
 							boolean result6 = adminMenu.fileMmeber(members); // 모든 회원 정보 파일(.txt)로 만들기
 							break;
+							
 						case 7:
+							 boolean result7 = adminMenu.registerItem();
+							 break;
+						case 8:
+							adminMenu.showOrders();
+							break;
+						case 9:
+							adminMenu.showItems();
+							break;
+						case 10:
 							System.out.println("회원 관리 프로그램을 종료합니다.");
 							adminLogining = false;
 							adminLoginSuccess = false;
@@ -103,10 +115,7 @@ public class MemberMain {
 					}
 				}
 			}
-			if (adminLogining == false && adminLoginSuccess == false)
-				continue;
 
-			boolean userLogining = true;
 			if (userLoginSuccess) {
 				while (userLogining) {
 					userMenu.menu(); // 메뉴 선택 화면
@@ -133,10 +142,14 @@ public class MemberMain {
 								userLoginSuccess = false;
 							}
 							break;
-						case 4:
+						case 4:  // 주문
+							userMenu.itemOrder();
+							break;
+						case 5:
 							System.out.println("종료합니다.");
 							userLogining = false;
 							break;
+							
 						default:
 							System.out.println("1~4사이의 번호를 입력하세요");
 					}
